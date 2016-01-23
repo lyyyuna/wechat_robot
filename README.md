@@ -16,7 +16,16 @@ login 和 sync 的逻辑和代码参考并复用了 [查看被删的微信好友
 
 ## 问题
 
+## 2016.1.23
+
+wechat-robot.py 改用 Python3。原来的 urllib2/urllib 全部改为了 requests。
+
+webwxgetcontact/websync 那块需要 login() 阶段获取的 cookie。
+
+用 requests 有个小坑，在 websync 阶段获取的 r.text 会被认为 r.encoding = 'ISO-8859-1'。需要手动改为 r.encoding = 'utf-8'。
+
 ### 2016.1.22
+
 sync 部分会出错，连接错误。不清楚这部分如果捕获异常后再次发送会不会有问题，因为 synckey 每次 sync 都会改变，再次 sync 不知腾讯是否接受。
 
 别人发送的 content 我是直接截取 [71:]，实测有问题。
