@@ -16,7 +16,13 @@ login 和 sync 的逻辑和代码参考并复用了 [查看被删的微信好友
 
 ## 问题
 
-## 2016.1.23
+### 2016.1.24
+
+sync 改为定时。之前是 sync -> sendmsg -> sync ....
+
+定时之后，sync 时间固定，与 sendmsg 分开。收到的消息用 lock+deque 同步。
+
+### 2016.1.23
 
 wechat-robot.py 改用 Python3。原来的 urllib2/urllib 全部改为了 requests。
 

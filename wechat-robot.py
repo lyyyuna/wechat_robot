@@ -6,7 +6,10 @@ import simplejson as json
 import time
 import re
 import xml.dom.minidom
-# from collections import deque
+from collections import deque
+
+import threading
+lock = threading.Lock()
 
 DEBUG = False
 LOG = True
@@ -14,7 +17,7 @@ LOG = True
 deviceId = 'e000000000000000' 
 g_info = {}
 g_info['tip'] = 0
-g_queue = []
+g_queue = deque()# []
 
 import config
 apikey = config.apikey
@@ -340,7 +343,15 @@ def getMsg(msg_list):
             content = msg['Content']
             response['Content'] = content[content.find('>')+1:]
             response['FromUserName'] = msg['FromUserName']
-            g_queue.append(response)
+
+            lock.acquire()
+            try:
+                g_queue.append(response)
+            finally:
+                lock.release()
+
+    if LOG:
+        print ('getmsg queue: %s' % len(g_queue))
 
 
 def webwxsendmsg(content, user):
@@ -359,11 +370,12 @@ def webwxsendmsg(content, user):
     url = base_uri + \
     '/webwxsendmsg?pass_ticket=%s' % (pass_ticket)
 
+    msgid = int(time.time()*10000000)
     msg = {
-        'ClientMsgId' : 14533331712090640 ,
+        'ClientMsgId' : msgid ,
         'Content' : content,
         'FromUserName' : My['UserName'] ,
-        'LocalID' : 14533331712090640 ,
+        'LocalID' : msgid ,
         'ToUserName' : user,
         'Type' : 1
     }
@@ -383,34 +395,60 @@ def sendMsg():
     MemberList = g_info['MemberList']
     tuling_url = 'http://www.tuling123.com/openapi/api?key=' + apikey + '&info='
 
-    for response in g_queue:
+    # for response in g_queue:
+    #     content = response['Content']
+    #     # print (content)
+    #     from_user = response['FromUserName']
+
+    #     # # AT = ''
+    #     # if from_user.find('@@') != -1:
+    #     #     # # 群聊，回复的时候加 @            
+    #     #     # AT = '@' + MemberList[from_user] + ' '
+    #     #     # # 把别人的 @ 去掉
+    #     #     # if content.find('@') == 0:
+    #     #     #     content = content[content.find(' ')+1:]
+
+    #     # # 把消息转发给图灵机器人
+    #     tuling_url = tuling_url + content
+    #     try:
+    #         data = requests.get(tuling_url)
+    #         data = json.loads(data.text)
+    #         text = data['text']
+    #     except:
+    #         text = '网络异常。。。。。'  
+    
+    if LOG:
+        print ('sendmsg queue: %s' % len(g_queue))
+    while len(g_queue) > 0:
+        lock.acquire()
+        try:
+            response = g_queue.popleft()
+        finally:
+            lock.release()
+
         content = response['Content']
-        # print (content)
         from_user = response['FromUserName']
-
-        # # AT = ''
-        # if from_user.find('@@') != -1:
-        #     # # 群聊，回复的时候加 @            
-        #     # AT = '@' + MemberList[from_user] + ' '
-        #     # # 把别人的 @ 去掉
-        #     # if content.find('@') == 0:
-        #     #     content = content[content.find(' ')+1:]
-
-        # # 把消息转发给图灵机器人
         tuling_url = tuling_url + content
         try:
             data = requests.get(tuling_url)
             data = json.loads(data.text)
             text = data['text']
         except:
-            text = '网络异常。。。。。'  
-
-
+            text = '网络异常。。。。。'          
         webwxsendmsg('钦定的哈利波特：' + text, from_user)
-        time.sleep(0.1)
+        time.sleep(0.2)
+    
 
-    g_queue.clear()
 
+def heartBeatLoop():
+    while True:
+        retcode, selector = syncCheck()
+        if retcode != '0':
+            print ('sync 失败。。。')
+        if selector == '2':
+            state, msg_list = webwxsync()
+            getMsg(msg_list)
+        time.sleep(1)
 
 def main():
     global g_info
@@ -437,22 +475,18 @@ def main():
 
     print ('获取好友。。。。')
     webwxgetcontact()
+
     print ('开始心跳 噗咚噗通')
+    t1 = threading.Thread(target=heartBeatLoop)
+    t1.start()
+
     MemberCount = len(g_info['MemberList'])
     print ('这位同志啊，你有 %s 个好友' % MemberCount)
 
     try:
         while True:
-            retcode, selector = syncCheck()
-            if retcode != '0':
-                print ('sync 失败。。。')
-                return
-            if selector == '2':
-                state, msg_list = webwxsync()
-                getMsg(msg_list)
-                sendMsg()
-
-            time.sleep(0.5)
+            sendMsg()
+            time.sleep(0.8)
     except KeyboardInterrupt:
         print ('bye bye ~')
 
