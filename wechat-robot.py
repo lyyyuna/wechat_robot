@@ -341,8 +341,30 @@ def getMsg(msg_list):
         if msg['ToUserName'] == My['UserName']:
             response = {}
             content = msg['Content']
+
+            if content.find(':') != -1:
+                fromsomeone = content[:content.find(':<br/>')]
+            else:
+                fromsomeone = ''
+
+            fromsomeone_NickName = ''
+            if msg['FromUserName'].find('@@') != -1:
+                groupName = msg['FromUserName']
+                if groupName not in g_info:
+                    g_info['Group_UserName_Req'] = msg['FromUserName']
+                elif fromsomeone in g_info[groupName]:
+                    fromsomeone_NickName = g_info[groupName][fromsomeone]
+                    fromsomeone_NickName = '@' + fromsomeone_NickName + ' '
+                else:
+                    g_info['Group_UserName_Req'] = msg['FromUserName']
+            else:
+                fromsomeone_NickName = ''
+
+            response['fromsomeone'] = fromsomeone_NickName
             response['Content'] = content[content.find('>')+1:]
             response['FromUserName'] = msg['FromUserName']
+
+            # g_info['Group_UserName_Req'] = response['FromUserName']
 
             lock.acquire()
             try:
@@ -395,28 +417,6 @@ def sendMsg():
     MemberList = g_info['MemberList']
     tuling_url = 'http://www.tuling123.com/openapi/api?key=' + apikey + '&info='
 
-    # for response in g_queue:
-    #     content = response['Content']
-    #     # print (content)
-    #     from_user = response['FromUserName']
-
-    #     # # AT = ''
-    #     # if from_user.find('@@') != -1:
-    #     #     # # 群聊，回复的时候加 @            
-    #     #     # AT = '@' + MemberList[from_user] + ' '
-    #     #     # # 把别人的 @ 去掉
-    #     #     # if content.find('@') == 0:
-    #     #     #     content = content[content.find(' ')+1:]
-
-    #     # # 把消息转发给图灵机器人
-    #     tuling_url = tuling_url + content
-    #     try:
-    #         data = requests.get(tuling_url)
-    #         data = json.loads(data.text)
-    #         text = data['text']
-    #     except:
-    #         text = '网络异常。。。。。'  
-    
     if LOG:
         print ('sendmsg queue: %s' % len(g_queue))
     while len(g_queue) > 0:
@@ -428,6 +428,7 @@ def sendMsg():
 
         content = response['Content']
         from_user = response['FromUserName']
+        AT = response['fromsomeone']
         tuling_url = tuling_url + content
         try:
             data = requests.get(tuling_url)
@@ -435,11 +436,81 @@ def sendMsg():
             text = data['text']
         except:
             text = '网络异常。。。。。'          
-        webwxsendmsg('钦定的哈利波特：' + text, from_user)
-        time.sleep(0.2)
+        webwxsendmsg(AT + text, from_user)
+        time.sleep(3)
     
 
 
+
+
+def webwxbatchgetcontact(UserName):
+    global g_info
+
+    base_uri = g_info['base_uri']
+    pass_ticket = g_info['pass_ticket']
+    BaseRequest = g_info['BaseRequest']
+
+    url = base_uri + '/webwxbatchgetcontact?'
+
+
+    List = [{
+        'ChatRoomId' : '',
+        'UserName' : UserName
+    }]
+    
+    post_params = {
+        'BaseRequest': BaseRequest ,
+        'Count' : 1 ,
+        'List' : List
+    } 
+    url_params = {
+        'lang' : 'zh_CN' ,
+        'type' : 'ex' ,
+        'pass_ticket' : pass_ticket ,
+        'r' : int(time.time())
+    }
+
+    headers = {
+        'ContentType': 'application/json; charset=UTF-8'
+    }
+    r = requests.post(url, params=url_params, data=json.dumps(post_params), headers = headers, cookies=g_info['cookies'])
+
+    r.encoding = 'utf-8'
+    dic = json.loads(r.text)    
+
+
+    GroupMapUsers = {}
+    ContactList = dic['ContactList']
+    for contact in ContactList:
+        memberlist = contact['MemberList']
+        for member in memberlist:
+            GroupMapUsers[member['UserName']] = member['NickName']
+
+            if DEBUG:
+                print (member['NickName'])
+
+    g_info[UserName] = GroupMapUsers
+
+
+
+
+def getgroupinfo():
+    global g_info
+
+    if 'Group_UserName_Req' not in g_info:
+        return
+    if g_info['Group_UserName_Req'] == '0':
+        return
+
+    Group_UserName = g_info['Group_UserName_Req']
+    webwxbatchgetcontact(Group_UserName)
+
+    g_info['Group_UserName_Req'] = '0'
+
+    time.sleep(0.5)
+
+
+    
 def heartBeatLoop():
     while True:
         retcode, selector = syncCheck()
@@ -448,7 +519,11 @@ def heartBeatLoop():
         if selector == '2':
             state, msg_list = webwxsync()
             getMsg(msg_list)
+            getgroupinfo()
+
         time.sleep(1)
+
+
 
 def main():
     global g_info
@@ -486,7 +561,7 @@ def main():
     try:
         while True:
             sendMsg()
-            time.sleep(0.8)
+            time.sleep(1.5)
     except KeyboardInterrupt:
         print ('bye bye ~')
 

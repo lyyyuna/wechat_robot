@@ -21,6 +21,8 @@ login 和 sync 的逻辑和代码参考并复用了 [查看被删的微信好友
 sync 改为定时。之前是 sync -> sendmsg -> sync ....
 
 定时之后，sync 时间固定，与 sendmsg 分开。收到的消息用 lock+deque 同步。
+群消息回复改为 '@nickname xxxxx'，在回复时找不到用户就会触发一次 webwxbatchgetcontact，在另一个线程中。
+目前缺点是，第一次回复找不到用户就没有 @ 了，从第二次开始。
 
 ### 2016.1.23
 
