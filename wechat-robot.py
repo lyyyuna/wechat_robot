@@ -6,11 +6,12 @@ import simplejson as json
 import time
 import re
 import xml.dom.minidom
-from collections import deque
+# from collections import deque
+import queue
 import html
 
 import threading
-lock = threading.Lock()
+# lock = threading.Lock()
 
 DEBUG = False
 LOG = True
@@ -18,7 +19,7 @@ LOG = True
 deviceId = 'e000000000000000' 
 g_info = {}
 g_info['tip'] = 0
-g_queue = deque()# []
+g_queue = queue.Queue()# []
 
 import config
 apikey = config.apikey
@@ -373,14 +374,21 @@ def getMsg(msg_list):
             # g_info['Group_UserName_Req'] = response['FromUserName']
 
             # 不停地塞新消息
-            lock.acquire()
-            try:
-                g_queue.append(response)
-            finally:
-                lock.release()
+            # lock.acquire()
+            # try:
+            #     g_queue.append(response)
+            # finally:
+            #     lock.release()
+            # print (response['Content'])
+
+            # test
+            if g_queue.qsize() > 5:
+                g_queue.get()
+                g_queue.get()
+            g_queue.put(response)
 
     if LOG:
-        print ('getmsg queue: %s' % len(g_queue))
+        print ('getmsg queue: %s' % g_queue.qsize())
 
 
 def webwxsendmsg(content, user):
@@ -424,14 +432,16 @@ def sendMsg():
     MemberList = g_info['MemberList']
     tuling_url = 'http://www.tuling123.com/openapi/api?key=' + apikey + '&info='
 
+    time.sleep(1)
     if LOG:
-        print ('sendmsg queue: %s' % len(g_queue))
-    while len(g_queue) > 0:
-        lock.acquire()
-        try:
-            response = g_queue.popleft()
-        finally:
-            lock.release()
+        print ('sendmsg queue: %s' % g_queue.qsize())
+    while g_queue.empty() is False:
+        # lock.acquire()
+        # try:
+        #     response = g_queue.popleft()
+        # finally:
+        #     lock.release()
+        response = g_queue.get()
 
         content = response['Content']
         from_user = response['FromUserName']
@@ -491,10 +501,13 @@ def webwxbatchgetcontact(UserName):
     for contact in ContactList:
         memberlist = contact['MemberList']
         for member in memberlist:
+            # 默认 @群名片，没有群名片就 @昵称
             nickname = member['NickName']
             displayname = member['DisplayName']
             AT = ''
             if displayname == '':
+                # 有些人的昵称会有表情 <span> 会表示成 &lt;span&gt;
+                # 需要 html.unescape() 转义一下
                 AT = html.unescape(nickname)
             else:
                 AT = html.unescape(displayname)
