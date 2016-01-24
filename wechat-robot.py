@@ -7,6 +7,7 @@ import time
 import re
 import xml.dom.minidom
 from collections import deque
+import html
 
 import threading
 lock = threading.Lock()
@@ -342,19 +343,24 @@ def getMsg(msg_list):
             response = {}
             content = msg['Content']
 
-            if content.find(':') != -1:
+            # 群消息中 :<br/> 之前是 UserName
+            if content.find(':<br/>') != -1:
                 fromsomeone = content[:content.find(':<br/>')]
             else:
                 fromsomeone = ''
 
             fromsomeone_NickName = ''
             if msg['FromUserName'].find('@@') != -1:
+                # 如果是来自群，那就试着去 g_info[] 对应的群中找群成员列表
                 groupName = msg['FromUserName']
+                # 群还没有记录
                 if groupName not in g_info:
                     g_info['Group_UserName_Req'] = msg['FromUserName']
+                # 在群列表中有了，因为可能群成员会变化，所以要再次找一遍
                 elif fromsomeone in g_info[groupName]:
                     fromsomeone_NickName = g_info[groupName][fromsomeone]
                     fromsomeone_NickName = '@' + fromsomeone_NickName + ' '
+                # 找不到，所以置标志位，会在另一个群中触发寻找行为
                 else:
                     g_info['Group_UserName_Req'] = msg['FromUserName']
             else:
@@ -366,6 +372,7 @@ def getMsg(msg_list):
 
             # g_info['Group_UserName_Req'] = response['FromUserName']
 
+            # 不停地塞新消息
             lock.acquire()
             try:
                 g_queue.append(response)
@@ -484,11 +491,19 @@ def webwxbatchgetcontact(UserName):
     for contact in ContactList:
         memberlist = contact['MemberList']
         for member in memberlist:
-            GroupMapUsers[member['UserName']] = member['NickName']
+            nickname = member['NickName']
+            displayname = member['DisplayName']
+            AT = ''
+            if displayname == '':
+                AT = html.unescape(nickname)
+            else:
+                AT = html.unescape(displayname)
+            GroupMapUsers[member['UserName']] = AT
 
             if DEBUG:
                 print (member['NickName'])
 
+    # 整群的成员列表消息记录
     g_info[UserName] = GroupMapUsers
 
 
@@ -505,6 +520,7 @@ def getgroupinfo():
     Group_UserName = g_info['Group_UserName_Req']
     webwxbatchgetcontact(Group_UserName)
 
+    # 这个变量表示一次 获取群成员列表 请求。请求完毕置空
     g_info['Group_UserName_Req'] = '0'
 
     time.sleep(0.5)
