@@ -454,8 +454,13 @@ def sendMsg():
         except:
             text = '网络异常。。。。。'          
         webwxsendmsg(AT + text, from_user)
-        time.sleep(3)
-    
+        time.sleep(1)
+
+        if LOG:
+            print
+            print ('机器人收到回复：%s' % content)
+            print ('机器人的回复: %s' % text)
+            print
 
 
 
