@@ -1,3 +1,5 @@
+# coding=utf-8
+
 import asyncio
 import aiohttp
 import json
@@ -7,13 +9,25 @@ class HttpClient:
         if not isinstance(client, aiohttp.ClientSession):
             raise TypeError('Please init with a aiohttp.ClientSession instance')
         self.__client = client
-
+        self.__cookies = None
+        
     async def get(self, url, params=None):
-        try:
+        try:            
+            self.__cookies = self.__client.cookies
             async with await self.__client.get(url, params=params) as r:
                 #assert r.status == 200
                 return await r.text()
             
+        except aiohttp.errors.DisconnectedError:
+            return None 
+
+    async def get_json(self, url, params=None):
+        try:   
+            self.__cookies = self.__client.cookies         
+            async with await self.__client.get(url, params=params) as r:
+                text = await r.text(encoding='utf-8')
+                return json.loads(text)
+                        
         except aiohttp.errors.DisconnectedError:
             return None 
 
@@ -28,6 +42,7 @@ class HttpClient:
 
     async def post_json(self, url, data, params=None):
         try:
+            
             async with await self.__client.post(url, params=params, data=data) as r:
                 #assert r.status == 200
                 return await r.json()
