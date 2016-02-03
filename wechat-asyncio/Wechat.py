@@ -28,8 +28,11 @@ class Wechat():
         self.tip = 0
         self.deviceId = 'e000701000000000'
 
-        self.recvqueue = Queue()
-        self.sendqueue = Queue()
+        self.recvqueue = asyncio.Queue()
+        self.sendqueue = asyncio.Queue()
+        self.blacklist = []
+        self.updatequeue = asyncio.Queue() # 更新群组信息的请求
+        self.grouplist = {} # 存储群组的联系人信息
 
     async def __getuuid(self):
         logging.debug('Entering getuuid.')
@@ -181,6 +184,8 @@ class Wechat():
 
         SpecialUsers = ["newsapp", "fmessage", "filehelper", "weibo", "qqmail", "tmessage", "qmessage", "qqsync", "floatbottle", "lbsapp", "shakeapp", "medianote", "qqfriend", "readerapp", "blogapp", "facebookapp", "masssendapp",
                     "meishiapp", "feedsapp", "voip", "blogappweixin", "weixin", "brandsessionholder", "weixinreminder", "wxid_novlwrv3lqwv11", "gh_22b87fa7cb3c", "officialaccounts", "notification_messages", "wxitil", "userexperience_alarm"]
+        self.blacklist += SpecialUsers
+
         MemberList = {}
         for member in dic['MemberList']:
             if member['VerifyFlag'] & 8 != 0: # 公众号
@@ -270,6 +275,29 @@ class Wechat():
             await self.recvqueue.put(msg)
 
 
+    async def __webwxsendmsg(self, content, user):
+        url = self.base_uri + \
+            '/webwxsendmsg?pass_ticket=%s' % (self.pass_ticket)
+
+        msgid = int(time.time()*10000000)
+        msg = {
+            'ClientMsgId' : msgid ,
+            'Content' : content,
+            'FromUserName' : self.My['UserName'] ,
+            'LocalID' : msgid ,
+            'ToUserName' : user,
+            'Type' : 1
+        }
+        payload = {
+            'BaseRequest' : self.BaseRequest ,
+            'Msg' : msg
+        }
+        data = json.dumps(payload, ensure_ascii=False)
+        data = data.encode('utf-8')
+        text = await self.__wxclient.post(url, data=data)
+        # print (text)
+
+
     async def sync(self):
         await self.__login()
         print ('开始心跳噗通噗咚 咚咚咚！！！！')
@@ -286,5 +314,15 @@ class Wechat():
 
     async def sendmsg(self):
         while True:
-            msg = await self.sendqueue.get()
+            print (self.recvqueue.qsize())
             await asyncio.sleep(1)
+
+            response = await self.sendqueue.get()
+            print (23423423)
+            await self.__webwxsendmsg(response['Content'], response['user'])
+            print (1231232)
+
+    async def updategroupinfo(self):
+        while True:
+            await self.updatequeue.get()
+            await asyncio.sleep(3)

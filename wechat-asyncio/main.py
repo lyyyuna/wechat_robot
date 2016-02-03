@@ -11,5 +11,11 @@ with aiohttp.ClientSession() as client:
     wx = Wechat(client)
     robot = RobotEngine()
     msg = MsgHandler(wx, robot)
-    tasks = [wx.sync(), wx.sendmsg(), msg.msgloop(), robot.dance()]
+    tasks = [
+            wx.sync(),
+            wx.sendmsg(),
+            wx.updategroupinfo(),
+            msg.msgloop(),
+            robot.dance()
+            ]
     asyncio.get_event_loop().run_until_complete(asyncio.wait(tasks))
