@@ -43,9 +43,10 @@ class MsgHandler:
                 fromsomeone_NickName = ''
 
             # print (content)
-            regx = re.compile(r'@.+?\u2005')
-            content = regx.sub(' ', content)
-            # print (content)
+            if len(content)>1:
+                regx = re.compile(r'@.+?\u2005')
+                content = regx.sub(' ', content)
+            print (content)
             msginfo['Content'] = content
             msginfo['fromsomeone'] = fromsomeone_NickName
             msginfo['FromUserName'] = msg['FromUserName']
@@ -58,10 +59,8 @@ class MsgHandler:
         while True:
             msginfo = await self.__parsemsg()
             if msginfo != None:
-                print (12313)
                 response = {}
-                response['Content'] = msginfo['Content']
+                response['Content'] = msginfo['fromsomeone'] + msginfo['Content']
                 response['user'] = msginfo['FromUserName']
                 await self.wx.sendqueue.put(response)
-            print (141342134)
             await asyncio.sleep(1)
