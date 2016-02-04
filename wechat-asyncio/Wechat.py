@@ -14,6 +14,7 @@
 # logger.setLevel(logging.DEBUG)
 
 DEBUG = True
+LOG = True
 
 from HttpClient import HttpClient
 import aiohttp
@@ -245,6 +246,9 @@ class Wechat():
             'r': int(time.time()*1000)
         }
         text = await self.__wxclient.get(url, params = params)
+        if text == None:
+            return ('1111', '1111')
+
         regx = r'window.synccheck={retcode:"(\d+)",selector:"(\d+)"}'
         pm = re.search(regx, text)
 
@@ -267,6 +271,8 @@ class Wechat():
         }
 
         dic = await self.__wxclient.post_json(url, params=params, data=json.dumps(payload))
+        if dic == None:
+            return
         # 更新 synckey
         self.SyncKey = dic['SyncKey']
 
@@ -297,10 +303,7 @@ class Wechat():
         data = json.dumps(payload, ensure_ascii=False)
         data = data.encode('utf-8')
 
-        if DEBUG == True
-            print (data)
         text = await self.__wxclient.post(url, data=data)
-        # print (text)
 
 
     async def __webwxbatchgetcontact(self, groupname):
@@ -357,17 +360,19 @@ class Wechat():
 
     async def sendmsg(self):
         while True:
-            print (self.recvqueue.qsize())
-            await asyncio.sleep(1)
-
+            if DEBUG == True:
+                print ('recvqueue size: ', self.recvqueue.qsize())
             response = await self.sendqueue.get()
-            print ('shoudao huifu')
+            # 不要发的太频繁，在拿到 response 之后歇一秒
+            await asyncio.sleep(1)
             await self.__webwxsendmsg(response['Content'], response['user'])
 
     async def updategroupinfo(self):
         while True:
             groupname = await self.updatequeue.get()
-            print ('更新群信息ddd')
+            if DEBUG == True:
+                print ('更新群信息开始')
             await self.__webwxbatchgetcontact(groupname)
             await asyncio.sleep(1)
-            print ('更新群信息')
+            if DEBUG == True:
+                print ('更新群信息结束')

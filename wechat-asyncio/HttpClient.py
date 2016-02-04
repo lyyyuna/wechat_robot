@@ -30,6 +30,8 @@ class HttpClient:
 
         except aiohttp.errors.DisconnectedError:
             return None
+        except aiohttp.errors.ClientResponseError:
+            return None
 
     async def post(self, url, data, params=None):
         try:
@@ -38,6 +40,8 @@ class HttpClient:
                 return await r.text()
 
         except aiohttp.errors.DisconnectedError:
+            return None
+        except aiohttp.errors.ClientResponseError:
             return None
 
     async def post_json(self, url, data, params=None):

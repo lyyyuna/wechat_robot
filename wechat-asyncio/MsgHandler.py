@@ -1,5 +1,7 @@
 # coding=utf-8
 
+LOG = True
+DEBUG = True
 
 import asyncio
 import re
@@ -7,6 +9,7 @@ import re
 class MsgHandler:
     def __init__(self, wx, robot):
         self.wx = wx
+        self.robot = robot
 
     async def __parsemsg(self):
         msg = await self.wx.recvqueue.get()
@@ -46,7 +49,9 @@ class MsgHandler:
             if len(content)>1:
                 regx = re.compile(r'@.+?\u2005')
                 content = regx.sub(' ', content)
-            print (content)
+
+            if DEBUG == True:
+                print (content)
             msginfo['Content'] = content
             msginfo['fromsomeone'] = fromsomeone_NickName
             msginfo['FromUserName'] = msg['FromUserName']
@@ -60,7 +65,15 @@ class MsgHandler:
             msginfo = await self.__parsemsg()
             if msginfo != None:
                 response = {}
-                response['Content'] = msginfo['fromsomeone'] + msginfo['Content']
+                answser = await self.robot.answser(msginfo)
+                response['Content'] = msginfo['fromsomeone'] + answser
                 response['user'] = msginfo['FromUserName']
                 await self.wx.sendqueue.put(response)
+                if LOG == True:
+                    # windows 上打印一些字符会有问题
+                    try:
+                        print (msginfo['fromsomeone'] + ' say: ' + msginfo['Content'])
+                        print ('Harry Potter say: ' + response['Content'])
+                    except:
+                        pass
             await asyncio.sleep(1)
