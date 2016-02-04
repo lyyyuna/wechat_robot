@@ -18,16 +18,22 @@ class RobotEngine():
         content = msginfo['Content']
         # 去掉英文，因为图灵机器人不支持
         content = re.sub(r'[a-zA-Z]', '', content)
+        # 去掉两端空格，不然图灵api那边有问题
+        content = content.strip()
         # 做一下字数限制
         content = content[:50]
+        # 做完处理发现没有字符了
+        if content == '':
+            content = self.__randomanswer()
+
         tuling_url = 'http://www.tuling123.com/openapi/api?key=' +\
                  config.apikey + '&info=' + content
-        print (tuling_url)
         dic = await self.rbclient.get_json(tuling_url)
         if dic != None:
             text = dic['text']
         else:
             text = '网络异常。。。。。。。。。。。。'
+            
         # 做一下字数回复的限制
         if len(text)>100:
             text = text[:100]
