@@ -33,12 +33,12 @@ class RobotEngine():
             text = dic['text']
         else:
             text = '网络异常。。。。。。。。。。。。'
-            
+
         # 做一下字数回复的限制
         if len(text)>100:
             text = text[:100]
             text = text + '......'
-        print (11111)
+
         # 对于不能回答的问题直接回复数数
         if text.find('不明白你是什么意思，麻烦换一种说法') != -1:
             text = str(self.acc)
