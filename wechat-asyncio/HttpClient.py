@@ -20,6 +20,8 @@ class HttpClient:
 
         except aiohttp.errors.DisconnectedError:
             return None
+        except aiohttp.errors.ClientResponseError:
+            return None
 
     async def get_json(self, url, params=None):
         try:

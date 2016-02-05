@@ -2,6 +2,7 @@
 
 
 import asyncio
+from time import ctime
 
 class Monitor():
     def __init__(self, wx):
@@ -9,13 +10,13 @@ class Monitor():
 
     async def monitor(self):
         while True:
-            print
-            print ('Monitoring..........')
-            print ('SyncKey: ', self.wx.SyncKey['List'][0])
+            print ()
+            print ('Monitoring.......... ' + ctime())
+            print ('retcode %s,  selector %s' % (self.wx.retcode, self.wx.selector))
             print ('recvqueue size: ', self.wx.recvqueue.qsize())
             print ('sendqueue size: ', self.wx.sendqueue.qsize())
             print ('updatequeue size: ', self.wx.updatequeue.qsize())
-            print
+            print ()
 
             if self.wx.recvqueue.qsize() > 3:
                 while self.wx.recvqueue.qsize() > 1:
@@ -38,4 +39,4 @@ class Monitor():
                     except:
                         pass
 
-            await asyncio.sleep(5)
+            await asyncio.sleep(10)

@@ -36,7 +36,9 @@ class Wechat():
         self.blacklist = []
         self.updatequeue = asyncio.Queue() # 更新群组信息的请求
         self.grouplist = {} # 存储群组的联系人信息
-        self.SyncKey = {'List':['1']}
+        # 给 monitor 用
+        self.retcode = '0'
+        self.selector = '0'
 
     async def __getuuid(self):
         # logging.debug('Entering getuuid.')
@@ -361,6 +363,8 @@ class Wechat():
                 await self.__webwxsync()
 
             await asyncio.sleep(1)
+            self.retcode = retcode
+            self.selector = selector
 
 
     async def sendmsg(self):
