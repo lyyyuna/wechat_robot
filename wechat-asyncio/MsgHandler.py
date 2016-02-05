@@ -1,7 +1,7 @@
 # coding=utf-8
 
 LOG = True
-DEBUG = True
+DEBUG = False
 
 import asyncio
 import re

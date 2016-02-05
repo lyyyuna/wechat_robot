@@ -33,6 +33,17 @@ class HttpClient:
         except aiohttp.errors.ClientResponseError:
             return None
 
+    async def get_json_timeout(self, url, params=None):
+        try:
+            self.__cookies = self.__client.cookies
+            with aiohttp.Timeout(2):
+                async with await self.__client.get(url, params=params) as r:
+                    text = await r.text(encoding='utf-8')
+                    return json.loads(text)
+
+        except:
+            return None
+
     async def post(self, url, data, params=None):
         try:
             async with await self.__client.post(url, params=params, data=data) as r:

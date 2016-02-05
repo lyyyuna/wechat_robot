@@ -2,14 +2,14 @@
 
 import asyncio
 import re
-import config
 from HttpClient import *
 import RobotPredefinedAnswer
 import random
 
 class RobotEngine():
-    def __init__(self, client):
+    def __init__(self, client, apikey):
         self.rbclient = HttpClient(client)
+        self.apikey = apikey
         self.acc = 0
         self.lasttext = ''
         self.lastuser = ''
@@ -27,8 +27,8 @@ class RobotEngine():
             content = self.__randomanswer()
 
         tuling_url = 'http://www.tuling123.com/openapi/api?key=' +\
-                 config.apikey + '&info=' + content
-        dic = await self.rbclient.get_json(tuling_url)
+                 self.apikey + '&info=' + content
+        dic = await self.rbclient.get_json_timeout(tuling_url)
         if dic != None:
             text = dic['text']
         else:

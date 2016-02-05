@@ -36,6 +36,7 @@ class Wechat():
         self.blacklist = []
         self.updatequeue = asyncio.Queue() # 更新群组信息的请求
         self.grouplist = {} # 存储群组的联系人信息
+        self.SyncKey = {'List':['1']}
 
     async def __getuuid(self):
         # logging.debug('Entering getuuid.')
@@ -48,6 +49,8 @@ class Wechat():
         }
 
         text = await self.__wxclient.post(url=url, data=payload)
+        if text == None:
+            return False
         # logging.info(text)
 
         regx = r'window.QRLogin.code = (\d+); window.QRLogin.uuid = "(\S+?)"'
@@ -325,6 +328,8 @@ class Wechat():
         }
 
         dic = await self.__wxclient.post_json(url, params=params, data=json.dumps(payload))
+        if dic == None:
+            return
         GroupMapUsers = {}
         ContactList = dic['ContactList']
         for contact in ContactList:
@@ -360,11 +365,9 @@ class Wechat():
 
     async def sendmsg(self):
         while True:
-            if DEBUG == True:
-                print ('recvqueue size: ', self.recvqueue.qsize())
             response = await self.sendqueue.get()
             # 不要发的太频繁，在拿到 response 之后歇一秒
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
             await self.__webwxsendmsg(response['Content'], response['user'])
 
     async def updategroupinfo(self):
