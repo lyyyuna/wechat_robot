@@ -1,20 +1,5 @@
 # coding=utf-8
 
-# import logging
-# import logging.handlers
-#
-# LOG_FILE = 'WechatLogin.log'
-#
-# handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes = 1024*1024, backupCount = 5) # 实例化handler
-# fmt = '%(asctime)s <%(filename)s>: [%(levelname)s] - %(message)s'
-# formatter = logging.Formatter(fmt)   #
-# handler.setFormatter(formatter)      #
-# logger = logging.getLogger()    #
-# logger.addHandler(handler)
-# logger.setLevel(logging.DEBUG)
-
-DEBUG = True
-LOG = True
 
 from HttpClient import HttpClient
 import aiohttp
@@ -24,6 +9,10 @@ import re
 import xml.dom.minidom
 import json
 import html
+
+import logging
+
+logger = logging.getLogger('wx')
 
 class Wechat():
     def __init__(self, client):
@@ -41,7 +30,7 @@ class Wechat():
         self.selector = '0'
 
     async def __getuuid(self):
-        # logging.debug('Entering getuuid.')
+        logger.debug('Entering getuuid.')
         url = 'https://login.weixin.qq.com/jslogin'
         payload = {
             'appid': 'wx782c26e4c19acffb',
@@ -53,7 +42,7 @@ class Wechat():
         text = await self.__wxclient.post(url=url, data=payload)
         if text == None:
             return False
-        # logging.info(text)
+        logger.info(text)
 
         regx = r'window.QRLogin.code = (\d+); window.QRLogin.uuid = "(\S+?)"'
         pm = re.search(regx, text)
@@ -68,7 +57,7 @@ class Wechat():
             return False
 
     async def __downloadQR(self):
-        # logging.debug('Entering downloadQR.')
+        logger.debug('Entering downloadQR.')
         url = 'https://login.weixin.qq.com/qrcode/' + self.uuid
         payload = {
             't': 'webwx',
@@ -76,11 +65,11 @@ class Wechat():
         }
 
         su = await self.__wxclient.downloadfile(url, data=payload, filename='qrimage.jpg')
-        print ('请扫描二维码')
+        logger.info ('请扫描二维码')
         return su
 
     async def __waitforlogin(self):
-        # logging.debug('Waiting for login.......')
+        logger.debug('Waiting for login.......')
         url = 'https://login.weixin.qq.com/cgi-bin/mmwebwx-bin/login?tip=%s&uuid=%s&_=%s' % (self.tip, self.uuid, int(time.time()))
         text = await self.__wxclient.get(url)
 
@@ -89,10 +78,10 @@ class Wechat():
         code = pm.group(1)
 
         if code == '201':
-            print ('成功扫描,请在手机上点击确认以登录')
+            logger.info ('成功扫描,请在手机上点击确认以登录')
             self.tip = 0
         elif code == '200':
-            print ('正在登录。。。')
+            logger.info ('正在登录。。。')
             regx = r'window.redirect_uri="(\S+?)";'
             pm = re.search(regx, text)
             redirect_uri = pm.group(1) + '&fun=new'
@@ -122,7 +111,7 @@ class Wechat():
 
 
     async def __checklogin(self):
-        # logging.debug('Entering checklogin.')
+        logger.debug('Entering checklogin.')
         text = await self.__wxclient.get(self.redirect_uri)
 
         doc = xml.dom.minidom.parseString(text)
@@ -147,7 +136,7 @@ class Wechat():
             'Skey': skey,
             'DeviceID': self.deviceId,
         }
-        # logging.debug('%s, %s, %s, %s', skey, wxsid, wxuin, pass_ticket)
+        logger.debug('%s, %s, %s, %s', skey, wxsid, wxuin, pass_ticket)
         self.skey = skey
         self.wxsid = wxsid
         self.wxuin = wxuin
@@ -160,14 +149,14 @@ class Wechat():
     async def __responseState(self, func, BaseResponse):
         ErrMsg = BaseResponse['ErrMsg']
         Ret = BaseResponse['Ret']
-        # logging.info('func: %s, Ret: %d, ErrMsg: %s' % (func, Ret, ErrMsg))
+        logger.info('func: %s, Ret: %d, ErrMsg: %s' % (func, Ret, ErrMsg))
         if Ret != 0:
             return False
         return True
 
 
     async def __webwxinit(self):
-        # logging.debug('Entering webwxinit.')
+        logger.debug('Entering webwxinit.')
         url = self.base_uri + \
             '/webwxinit?pass_ticket=%s&skey=%s&r=%s' % (
                 self.pass_ticket, self.skey, int(time.time()))
@@ -179,7 +168,7 @@ class Wechat():
 
         self.My = dic['User']
         self.SyncKey = dic['SyncKey']
-        # logging.debug('The new SyncKey is: %s' % self.SyncKey)
+        logger.debug('The new SyncKey is: %s' % self.SyncKey)
 
         return await self.__responseState('webwxinit', dic['BaseResponse'])
 
@@ -206,29 +195,29 @@ class Wechat():
             }
 
         self.memberlist = MemberList
-        # logging.info('You have %s friends.' % len(MemberList))
+        logger.info('You have %s friends.' % len(MemberList))
 
 
 
     async def __login(self):
         success = await self.__getuuid()
         if not success:
-            print ('获取 uuid 失败')
+            logger.info ('获取 uuid 失败')
         success = await self.__downloadQR()
         if not success:
-            print ('获取二维码失败')
+            logger.info ('获取二维码失败')
 
         while await self.__waitforlogin() != '200':
             pass
 
         success = await self.__checklogin()
         if not success:
-            print ('登陆失败')
-        print ('登陆成功')
+            logger.info ('登陆失败')
+        logger.info ('登陆成功')
         success = await self.__webwxinit()
         if not success:
-            print ('初始化失败')
-        print ('初始化成功')
+            logger.info ('初始化失败')
+        logger.info ('初始化成功')
 
         await self.__webwxgetcontact()
 
@@ -259,7 +248,7 @@ class Wechat():
 
         retcode = pm.group(1)
         selector = pm.group(2)
-        # logging.info('retcode: %s, selector: %s' % (retcode, selector))
+        logger.info('retcode: %s, selector: %s' % (retcode, selector))
         return (retcode, selector)
 
     async def __webwxsync(self):
@@ -353,12 +342,12 @@ class Wechat():
 
     async def sync(self):
         await self.__login()
-        print ('开始心跳噗通噗咚 咚咚咚！！！！')
-        # logging.info('Begin to sync with wx server.....')
+        logger.info ('开始心跳噗通噗咚 咚咚咚！！！！')
+        logger.info('Begin to sync with wx server.....')
         while True:
             retcode, selector = await self.__synccheck()
             if retcode != '0':
-                print ('sync 失败')
+                logger.info ('sync 失败')
             if selector == '2':
                 await self.__webwxsync()
 
@@ -377,9 +366,8 @@ class Wechat():
     async def updategroupinfo(self):
         while True:
             groupname = await self.updatequeue.get()
-            if DEBUG == True:
-                print ('更新群信息开始')
+
+            logger.info('更新群信息开始')
             await self.__webwxbatchgetcontact(groupname)
             await asyncio.sleep(1)
-            if DEBUG == True:
-                print ('更新群信息结束')
+            logger.info('更新群信息结束')

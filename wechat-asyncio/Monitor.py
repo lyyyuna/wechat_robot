@@ -1,8 +1,10 @@
 # coding=utf-8
 
-
+import logging
 import asyncio
 from time import ctime
+
+logger = logging.getLogger('monitor')
 
 class Monitor():
     def __init__(self, wx):
@@ -10,13 +12,12 @@ class Monitor():
 
     async def monitor(self):
         while True:
-            print ()
-            print ('Monitoring.......... ' + ctime())
-            print ('retcode %s,  selector %s' % (self.wx.retcode, self.wx.selector))
-            print ('recvqueue size: ', self.wx.recvqueue.qsize())
-            print ('sendqueue size: ', self.wx.sendqueue.qsize())
-            print ('updatequeue size: ', self.wx.updatequeue.qsize())
-            print ()
+            logger.info('Monitoring.......... ' + ctime())
+            logger.info('retcode %s,  selector %s' % (self.wx.retcode, self.wx.selector))
+            logger.info('recvqueue size: %s' % self.wx.recvqueue.qsize())
+            logger.info('sendqueue size: %s' % self.wx.sendqueue.qsize())
+            logger.info('updatequeue size: %s' % self.wx.updatequeue.qsize())
+            logger.info('Monitor end.......... ')
 
             if self.wx.recvqueue.qsize() > 3:
                 while self.wx.recvqueue.qsize() > 1:

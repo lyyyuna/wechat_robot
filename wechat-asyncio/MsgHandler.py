@@ -1,10 +1,10 @@
 # coding=utf-8
 
-LOG = True
-DEBUG = False
-
 import asyncio
 import re
+
+import logging
+logger = logging.getLogger('monitor')
 
 class MsgHandler:
     def __init__(self, wx, robot):
@@ -50,8 +50,6 @@ class MsgHandler:
                 regx = re.compile(r'@.+?\u2005')
                 content = regx.sub(' ', content)
 
-            if DEBUG == True:
-                print (content)
             msginfo['Content'] = content
             msginfo['fromsomeone'] = fromsomeone_NickName
             msginfo['FromUserName'] = msg['FromUserName']
@@ -69,11 +67,11 @@ class MsgHandler:
                 response['Content'] = msginfo['fromsomeone'] + answser
                 response['user'] = msginfo['FromUserName']
                 await self.wx.sendqueue.put(response)
-                if LOG == True:
+                # if LOG == True:
                     # windows 上打印一些字符会有问题
-                    try:
-                        print (msginfo['fromsomeone'] + ' say: ' + msginfo['Content'])
-                        print ('Harry Potter say: ' + response['Content'])
-                    except:
-                        pass
+                try:
+                    logger(msginfo['fromsomeone'] + ' say: ' + msginfo['Content'])
+                    logger('Harry Potter say: ' + response['Content'])
+                except:
+                    pass
             await asyncio.sleep(1)
