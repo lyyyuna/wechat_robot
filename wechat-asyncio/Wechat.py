@@ -348,7 +348,7 @@ class Wechat():
             retcode, selector = await self.__synccheck()
             if retcode != '0':
                 logger.info ('sync 失败')
-            if selector == '2':
+            if selector != '0':
                 await self.__webwxsync()
 
             await asyncio.sleep(1)

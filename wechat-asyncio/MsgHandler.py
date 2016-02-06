@@ -67,11 +67,8 @@ class MsgHandler:
                 response['Content'] = msginfo['fromsomeone'] + answser
                 response['user'] = msginfo['FromUserName']
                 await self.wx.sendqueue.put(response)
-                # if LOG == True:
-                    # windows 上打印一些字符会有问题
-                try:
-                    logger(msginfo['fromsomeone'] + ' say: ' + msginfo['Content'])
-                    logger('Harry Potter say: ' + response['Content'])
-                except:
-                    pass
+
+                logger.info(msginfo['fromsomeone'] + ' say: ' + msginfo['Content'])
+                logger.info('Harry Potter say: ' + response['Content'])
+
             await asyncio.sleep(1)
