@@ -18,8 +18,8 @@
 
 目前使用起来还不友好，且登陆有一定失败率。
 
-(terminal 1) python3 main.py 
-(terminal 2) tailf wx.log
+    (terminal 1) python3 main.py 
+    (terminal 2) tailf wx.log
 
 运行后会在当前文件夹内下载二维码，根据 wx.log 提示做即可。
 
