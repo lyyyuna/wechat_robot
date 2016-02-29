@@ -1,8 +1,12 @@
 # coding=utf-8
 
+import logging
 import asyncio
 import aiohttp
 import json
+
+logger = logging.getLogger('wx')
+
 
 class HttpClient:
     def __init__(self, client):
@@ -18,9 +22,8 @@ class HttpClient:
                 #assert r.status == 200
                 return await r.text()
 
-        except aiohttp.errors.DisconnectedError:
-            return None
-        except aiohttp.errors.ClientResponseError:
+        except Exception:
+            logger.exception("Network Exception, url: %s, params: %s" % (url, params))
             return None
 
     async def get_json(self, url, params=None):
@@ -30,9 +33,8 @@ class HttpClient:
                 text = await r.text(encoding='utf-8')
                 return json.loads(text)
 
-        except aiohttp.errors.DisconnectedError:
-            return None
-        except aiohttp.errors.ClientResponseError:
+        except Exception:
+            logger.exception("Network Exception, url: %s, params: %s" % (url, params))
             return None
 
     async def get_json_timeout(self, url, params=None):
@@ -43,7 +45,8 @@ class HttpClient:
                     text = await r.text(encoding='utf-8')
                     return json.loads(text)
 
-        except:
+        except Exception:
+            logger.exception("Network Exception, url: %s, params: %s" % (url, params))
             return None
 
     async def post(self, url, data, params=None):
@@ -52,9 +55,8 @@ class HttpClient:
                 #assert r.status == 200
                 return await r.text()
 
-        except aiohttp.errors.DisconnectedError:
-            return None
-        except aiohttp.errors.ClientResponseError:
+        except Exception:
+            logger.exception("Network Exception, url: %s, params: %s" % (url, params))
             return None
 
     async def post_json(self, url, data, params=None):
@@ -65,7 +67,21 @@ class HttpClient:
                 text = await r.text(encoding='utf-8')
                 return json.loads(text)
 
-        except aiohttp.errors.DisconnectedError:
+        except Exception:
+            logger.exception("Network Exception, url: %s, params: %s" % (url, params))
+            return None
+
+    async def post_json_timeout(self, url, data, params=None):
+        try:
+
+            with aiohttp.Timeout(2):
+                async with await self.__client.post(url, params=params, data=data) as r:
+                    #assert r.status == 200
+                    text = await r.text(encoding='utf-8')
+                    return json.loads(text)
+
+        except Exception:
+            logger.exception("Network Exception, url: %s, params: %s" % (url, params))
             return None
 
     async def downloadfile(self, url, data, filename):
