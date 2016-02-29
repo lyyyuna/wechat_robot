@@ -26,10 +26,15 @@ class RobotEngine():
         if content == '':
             content = self.__randomanswer()
 
-        tuling_url = 'http://www.tuling123.com/openapi/api?key=' +\
-                 self.apikey + '&info=' + content
-        dic = await self.rbclient.get_json_timeout(tuling_url)
-        if dic != None:
+        tuling_data = dict(
+            key=self.apikey,
+            info=content,
+            userid=msginfo['FromUserName'][2:32],  # 把userName的一部分截取,作为userid,这样对话有上下文功能.
+        )
+        tuling_url = 'http://www.tuling123.com/openapi/api'
+        # 使用post方法访问图灵,以免出现content没有经过urlencoded得不到正确结果.
+        dic = await self.rbclient.post_json_timeout(tuling_url, data=tuling_data)
+        if dic is not None:
             text = dic['text']
         else:
             text = '网络异常。。。。。。。。。。。。'

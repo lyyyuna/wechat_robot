@@ -71,6 +71,19 @@ class HttpClient:
             logger.exception("Network Exception, url: %s, params: %s" % (url, params))
             return None
 
+    async def post_json_timeout(self, url, data, params=None):
+        try:
+
+            with aiohttp.Timeout(2):
+                async with await self.__client.post(url, params=params, data=data) as r:
+                    #assert r.status == 200
+                    text = await r.text(encoding='utf-8')
+                    return json.loads(text)
+
+        except Exception:
+            logger.exception("Network Exception, url: %s, params: %s" % (url, params))
+            return None
+
     async def downloadfile(self, url, data, filename):
         try:
             async with await self.__client.post(url, data=data) as r:
