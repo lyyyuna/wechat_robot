@@ -3,6 +3,7 @@
 import asyncio
 import re
 
+import config
 import logging
 logger = logging.getLogger('monitor')
 
@@ -71,4 +72,4 @@ class MsgHandler:
                 logger.info(msginfo['fromsomeone'] + ' say: ' + msginfo['Content'])
                 logger.info('Harry Potter say: ' + response['Content'])
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(config.msgloop_interval)

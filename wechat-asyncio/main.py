@@ -7,7 +7,7 @@ from Wechat import Wechat
 from MsgHandler import MsgHandler
 from RobotEngine import RobotEngine
 from Monitor import Monitor
-import config
+import auth
 
 import logging
 import logging.handlers
@@ -33,7 +33,7 @@ logger1.setLevel(logging.DEBUG)
 
 with aiohttp.ClientSession() as client, aiohttp.ClientSession() as rclient:
     wx = Wechat(client)
-    robot = RobotEngine(rclient, config.apikey)
+    robot = RobotEngine(rclient, auth.apikey)
     msg = MsgHandler(wx, robot)
     god = Monitor(wx)
     tasks = [

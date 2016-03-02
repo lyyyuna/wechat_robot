@@ -3,6 +3,7 @@
 import logging
 import asyncio
 from time import ctime
+import config
 
 logger = logging.getLogger('monitor')
 
@@ -40,4 +41,4 @@ class Monitor():
                     except:
                         pass
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(config.monitor_interval)

@@ -10,6 +10,7 @@ import xml.dom.minidom
 import json
 import html
 
+import config
 import logging
 
 logger = logging.getLogger('wx')
@@ -362,7 +363,7 @@ class Wechat():
             if selector != '0':
                 await self.__webwxsync()
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(config.sync_interval)
             self.retcode = retcode
             self.selector = selector
 
@@ -371,7 +372,7 @@ class Wechat():
         while True:
             response = await self.sendqueue.get()
             # 不要发的太频繁，在拿到 response 之后歇一秒
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(config.send_interval)
             await self.__webwxsendmsg(response['Content'], response['user'])
 
     async def updategroupinfo(self):
@@ -380,5 +381,5 @@ class Wechat():
 
             logger.info('更新群信息开始')
             await self.__webwxbatchgetcontact(groupname)
-            await asyncio.sleep(1)
+            await asyncio.sleep(config.updategroupinfo_interval)
             logger.info('更新群信息结束')
