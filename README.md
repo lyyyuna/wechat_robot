@@ -9,9 +9,12 @@
 
 ## 简单说明
 
-### 准备
+### 依赖
 
-* 申请一枚图灵机器人 API，新建 config.py，并写入 'apikey = xxxxxxxxxxx'
+申请一枚图灵机器人 API，新建 auth.py，并写入 
+
+    apikey = 'xxxxxxxxxxx'
+
 * pip3 install aiohttp
 
 ### 快速开始
@@ -19,12 +22,15 @@
 目前使用起来还不友好，且登陆有一定失败率。
 
     (terminal 1) python3 main.py 
-    (terminal 2) tailf wx.log
 
-运行后会在当前文件夹内下载二维码，根据 wx.log 提示做即可。
+运行后会在当前文件夹内下载二维码，根据终端提示做即可。
 
 1. 若 10s 内二维码下载失败则重来。
 2. 若 wx.log 提示 sync 失败则重来。
+
+### 参数调整
+
+在 config.py 中可以对各个时间间隔做调整。
 
 ## Changelog
 
