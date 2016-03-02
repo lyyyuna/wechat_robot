@@ -66,6 +66,7 @@ class Wechat():
 
         su = await self.__wxclient.downloadfile(url, data=payload, filename='qrimage.jpg')
         logger.info ('请扫描二维码')
+        print ('请扫描二维码')
         return su
 
     async def __waitforlogin(self):
@@ -79,9 +80,11 @@ class Wechat():
 
         if code == '201':
             logger.info ('成功扫描,请在手机上点击确认以登录')
+            print ('成功扫描,请在手机上点击确认以登录')
             self.tip = 0
         elif code == '200':
             logger.info ('正在登录。。。')
+            print ('正在登录。。。')
             regx = r'window.redirect_uri="(\S+?)";'
             pm = re.search(regx, text)
             redirect_uri = pm.group(1) + '&fun=new'
@@ -203,9 +206,11 @@ class Wechat():
         success = await self.__getuuid()
         if not success:
             logger.info ('获取 uuid 失败')
+            print ('获取 uuid 失败')
         success = await self.__downloadQR()
         if not success:
             logger.info ('获取二维码失败')
+            print ('获取二维码失败')
 
         while await self.__waitforlogin() != '200':
             pass
@@ -213,11 +218,15 @@ class Wechat():
         success = await self.__checklogin()
         if not success:
             logger.info ('登陆失败')
+            print ('登陆失败')
         logger.info ('登陆成功')
+        print ('登陆成功')
         success = await self.__webwxinit()
         if not success:
             logger.info ('初始化失败')
+            print ('初始化失败')
         logger.info ('初始化成功')
+        print ('初始化成功')
 
         await self.__webwxgetcontact()
 
@@ -343,11 +352,13 @@ class Wechat():
     async def sync(self):
         await self.__login()
         logger.info ('开始心跳噗通噗咚 咚咚咚！！！！')
+        print ('开始心跳噗通噗咚 咚咚咚！！！！')
         logger.info('Begin to sync with wx server.....')
         while True:
             retcode, selector = await self.__synccheck()
             if retcode != '0':
                 logger.info ('sync 失败')
+                print ('sync 失败')
             if selector != '0':
                 await self.__webwxsync()
 
